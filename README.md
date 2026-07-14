@@ -39,6 +39,24 @@ python3 course/day02/deploy/build_release.py --output artifacts/day02
 Day 2 质量门禁同时执行真实 CLI 端到端测试和发布包的构建、SHA-256
 校验、解压及独立目录部署冒烟测试。
 
+## Day 3 校验、测试与发布
+
+- [Day 3 完整课件：条件、循环与可恢复交互](course/day03/day03-lesson.md)
+- [带详细注释的可校验治理 CLI](course/day03/solution/validated_cleaner.py)
+- [控制流与锁定端到端测试](course/day03/tests/test_validated_cleaner.py)
+- [发布部署链测试](course/day03/tests/test_release.py)
+
+```bash
+python3 course/day03/solution/validated_cleaner.py
+python3 course/day03/tests/test_validated_cleaner.py
+python3 course/day03/tests/test_release.py
+python3 tools/verify_day03.py
+python3 course/day03/deploy/build_release.py --output artifacts/day03
+```
+
+Day 3 门禁覆盖无效输入重试、三次身份失败退出码、部门白名单、数值范围、
+空敏感片段防护、人工复核路由、菜单恢复、零泄漏、发布完整性及部署冒烟。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
