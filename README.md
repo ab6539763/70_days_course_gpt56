@@ -15,9 +15,12 @@
 ```bash
 python course/day01/solution/profile_card.py
 python course/day01/tests/test_profile_card.py
+python3 tools/verify_day01.py
 ```
 
 课件中的 Mermaid 图可在支持 Mermaid 的 Markdown 阅读器中直接渲染。
+质量门禁会检查 Day 1 课件不少于 30,000 个 Unicode 字符、必备教学章节、
+Mermaid 图数量以及参考代码验收结果。
 
 ## 内容原则
 
