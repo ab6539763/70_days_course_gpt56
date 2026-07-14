@@ -45,8 +45,9 @@ department = department.replace("客服部", "客户服务部")
 job_title = job_title.title()
 
 # 为避免在课件中处理真实隐私，用户输入一段“模拟敏感片段”。
+# 提示中不展示具体样例值，避免提示文本本身与待检测片段相同而污染输出。
 # replace 会把该片段的全部精确匹配替换为固定掩码。
-sensitive_fragment = input("模拟敏感片段（示例 DEMO-13800000000）：").strip()
+sensitive_fragment = input("请输入任务中需要替换的模拟敏感片段：").strip()
 task_description = task_description.replace(sensitive_fragment, MASK)
 
 # 对明确的敏感字段标签做语义弱化，避免清洗结果继续鼓励输入凭据。
