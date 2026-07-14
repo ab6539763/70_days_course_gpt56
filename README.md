@@ -9,6 +9,10 @@
 - Day 1 [课堂起步代码](course/day01/starter/profile_card.py)
 - Day 1 [带详细注释的参考实现](course/day01/solution/profile_card.py)
 - Day 1 [自动验收脚本](course/day01/tests/test_profile_card.py)
+- [Day 2 完整课件：字符串、运算符与输入治理](course/day02/day02-lesson.md)
+- Day 2 [文本清洗参考实现](course/day02/solution/text_cleaner.py)
+- Day 2 [端到端功能测试](course/day02/tests/test_text_cleaner.py)
+- Day 2 [发布链路测试](course/day02/tests/test_release.py)
 
 ## Day 1 运行
 
@@ -21,6 +25,19 @@ python3 tools/verify_day01.py
 课件中的 Mermaid 图可在支持 Mermaid 的 Markdown 阅读器中直接渲染。
 质量门禁会检查 Day 1 课件不少于 30,000 个 Unicode 字符、必备教学章节、
 Mermaid 图数量以及参考代码验收结果。
+
+## Day 2 运行、测试与发布
+
+```bash
+python3 course/day02/solution/text_cleaner.py
+python3 course/day02/tests/test_text_cleaner.py
+python3 course/day02/tests/test_release.py
+python3 tools/verify_day02.py
+python3 course/day02/deploy/build_release.py --output artifacts/day02
+```
+
+Day 2 质量门禁同时执行真实 CLI 端到端测试和发布包的构建、SHA-256
+校验、解压及独立目录部署冒烟测试。
 
 ## 内容原则
 

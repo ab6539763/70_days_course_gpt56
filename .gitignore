@@ -8,6 +8,9 @@ venv/
 .env
 .env.*
 
+# 可由构建脚本重复生成的本地发布产物。
+artifacts/
+
 # 编辑器和操作系统生成的本地文件。
 .vscode/
 .idea/
