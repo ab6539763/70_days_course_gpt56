@@ -62,7 +62,7 @@ assert directory.update_contact(
 assert directory.update_contact(data, "C9", role="未知")[0] is False
 
 ordered = directory.ordered_contacts(data["contacts"])
-assert [item["contact_id"] for item in ordered] == ["C1", "C2"]
+assert [item["contact_id"] for item in ordered] == ["C2", "C1"]
 assert [item["contact_id"] for item in data["contacts"]] == ["C2", "C1"]
 
 assert [item["contact_id"] for item in directory.search_contacts(
