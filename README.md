@@ -57,6 +57,24 @@ python3 course/day03/deploy/build_release.py --output artifacts/day03
 Day 3 门禁覆盖无效输入重试、三次身份失败退出码、部门白名单、数值范围、
 空敏感片段防护、人工复核路由、菜单恢复、零泄漏、发布完整性及部署冒烟。
 
+## Day 4 多任务台账、测试与发布
+
+- [Day 4 完整课件：列表、元组、集合与任务台账](course/day04/day04-lesson.md)
+- [带详细注释的任务台账 CLI](course/day04/solution/task_board.py)
+- [CRUD 与一致性端到端测试](course/day04/tests/test_task_board.py)
+- [发布部署链测试](course/day04/tests/test_release.py)
+
+```bash
+python3 course/day04/solution/task_board.py
+python3 course/day04/tests/test_task_board.py
+python3 course/day04/tests/test_release.py
+python3 tools/verify_day04.py
+python3 course/day04/deploy/build_release.py --output artifacts/day04
+```
+
+Day 4 门禁覆盖多任务 CRUD、优先级排序、前三条切片、标签标准化去重、
+列表与编号集合一致性、批量清理、编号复用、身份锁定及独立部署后 CRUD。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
