@@ -1637,7 +1637,203 @@ v1 revision4，1联系人
 
 ---
 
-## 38. 复盘与 Day 9
+## 38. 对象设计改错题与完整答案
+
+### 题1：共享列表
+
+```python
+class PlatformState:
+    contacts = []
+```
+
+错误：contacts是类属性，所有状态实例共享。修复：在`__init__`中 `self.contacts = list(contacts or [])`。
+
+### 题2：漏写self
+
+```python
+class Contact:
+    def matches(keyword):
+        return keyword in self.name
+```
+
+错误：签名没有self，函数体却使用self。修复 `def matches(self, keyword)`。
+
+### 题3：错误返回
+
+```python
+def __init__(self, role, content):
+    return {"role": role}
+```
+
+错误：`__init__`只能返回None。状态写入self属性，序列化由to_dict负责。
+
+### 题4：类方法缺装饰器
+
+```python
+def from_dict(cls, data):
+    return cls(...)
+```
+
+从类调用时不会自动绑定cls。添加`@classmethod`。
+
+### 题5：静态方法需要实例
+
+```python
+@staticmethod
+def preview(self):
+    return self.content[:10]
+```
+
+错误：preview依赖实例，应移除staticmethod并保留self实例方法。
+
+### 题6：硬编码构造
+
+```python
+@classmethod
+def from_dict(cls, data):
+    return ChatMessage(data["role"], data["content"])
+```
+
+应使用cls，支持未来子类工厂：`return cls(...)`。
+
+### 题7：对象直接JSON
+
+```python
+json.dump(state, file)
+```
+
+json模块不知道自定义类。修复 `json.dump(state.to_dict(), file, ...)`。
+
+### 题8：只序列化属性字典
+
+直接保存 `state.__dict__` 仍包含Contact/ChatMessage对象，且泄漏内部字段。应显式to_dict递归转换并控制契约。
+
+### 题9：消息角色使用实例属性
+
+每个消息复制一份ALLOWED_ROLES浪费且可能不一致。共享固定规则用类属性。
+
+### 题10：聚合唯一放Contact
+
+单个Contact无法看到其他联系人邮箱。唯一性属于PlatformState或仓储/数据库。
+
+### 题11：构造器读取文件
+
+对象创建受工作目录和I/O失败影响，单测困难。load_state负责文件，from_dict负责对象图。
+
+### 题12：迁移时生成欢迎消息
+
+旧文件没有该历史，生成会伪造。messages应为空；产品新功能可在迁移后通过明确业务操作发送。
+
+### 题13：迁移反复执行
+
+保存后仍写schema1会导致每次启动migrated/revision增长。to_dict必须输出schema2，第二次load为loaded。
+
+### 题14：修改类属性
+
+运行时append `"tool"` 到共享roles会影响所有实例和测试顺序。固定规则用不可变元组，变更通过版本化代码。
+
+### 题15：to_dict返回skills原列表
+
+外部修改传输字典可能修改对象。更稳健：
+
+```python
+"skills": list(self.skills)
+```
+
+并补隔离测试。
+
+### 题16：from_dict不走构造器
+
+手工 `obj = cls.__new__` 后直接赋属性会绕过标准化。当前应调用cls构造器，除非迁移有明确不同规则。
+
+### 题17：消息列表排序
+
+按role排序会改变system/user/assistant时序，模型上下文语义错误。消息列表保持插入顺序。
+
+### 题18：联系人排序修改主列表
+
+若 `self.contacts.sort(...)` 在查询中执行，会隐藏副作用。返回sorted新列表或装饰视图。
+
+### 题19：静态方法滥用
+
+把文件哈希放ChatMessage静态方法只因“都是工具”不合理。哈希属于发布/基础设施普通函数。
+
+### 题20：类方法滥用
+
+不创建实例也不读取类状态的字符串join无需classmethod。选择方法类型按依赖，不按“看起来高级”。
+
+### 题21：公开role绕过
+
+`message.role="admin"` 当前可写。Day9可用property验证或只读设计；今天文档化风险。
+
+### 题22：聚合列表公开
+
+`state.messages.append(ChatMessage("tool","x"))` 绕过add_message。未来私有约定 `_messages` 和只读副本/property；Python封装仍需调用者协作。
+
+### 题23：对象相等
+
+字段相同的两个Contact当前可能比较False，因为未定义`__eq__`。不要用对象集合代替contact_id唯一。Day9定义相等语义前保持显式键。
+
+### 题24：Schema与类版本混淆
+
+应用0.0.8、Schema2、类定义没有必须相同的版本号。迁移依据数据schema，不依据应用字符串。
+
+### 题25：持久化自动化
+
+让每个setter自动写文件会产生大量I/O并绑定路径。领域方法返回changed，由应用层决定事务和保存。
+
+### 题26：异常吞掉
+
+from_dict遇到缺键若默默创建空对象，会覆盖损坏数据。Day10应捕获并返回明确数据错误，保留原文件。
+
+### 题27：继承误用
+
+让Contact继承ChatMessage只为复用to_dict不满足“Contact is a ChatMessage”。可用共同协议/基类谨慎设计，Day9讨论。
+
+### 题28：组合
+
+PlatformState包含Contact和ChatMessage是“has-a”，适合组合。聚合不意味着子对象继承聚合。
+
+### 题29：测试只检查类型
+
+`isinstance(message, ChatMessage)`不足以证明角色清理、内容和序列化正确。断言状态与行为。
+
+### 题30：部署只启动
+
+启动exit0不足以证明对象恢复。至少首次创建消息、第二进程恢复角色计数、解析JSON并检查制品无数据。
+
+### 改错评分
+
+每题3分：指出错误1、解释影响1、可执行修复1，共90分；另10分写出本项目一个未覆盖的对象边界及测试。低于75重新完成对象实验室。
+
+---
+
+## 39. 面向对象术语与项目证据对照
+
+| 术语 | 项目证据 |
+|---|---|
+| 类 | ChatMessage定义 |
+| 实例 | system/user具体消息 |
+| 属性 | role/content |
+| 实例方法 | preview |
+| 类属性 | ALLOWED_ROLES |
+| 类方法 | from_dict/system |
+| 静态方法 | is_valid_role |
+| 构造器 | `__init__`标准化 |
+| 聚合 | PlatformState拥有列表 |
+| 序列化 | to_dict |
+| 反序列化 | from_dict |
+| 组合 | State与Contact/Message |
+| 不变量 | 角色/唯一/非空 |
+| 副作用 | update_role/add_message |
+| 工厂 | empty/system/from_dict |
+| 迁移 | v1→v2 |
+
+学员答题必须同时给术语和代码证据。只会定义而不能指出项目位置，说明知识尚未转化为开发能力。
+
+---
+
+## 40. 复盘与 Day 9
 
 保持：类职责、实例隔离、三类方法、对象JSON边界、迁移证据。  
 停止：所有代码塞class、共享默认列表、对象直接dump、迁移编造数据。  
@@ -1655,7 +1851,7 @@ Day9 将设计 `BaseModel → OpenAIModel/QwenModel`，用继承、多态、supe
 
 ---
 
-## 39. 教学质量门禁
+## 41. 教学质量门禁
 
 | 指标 | 目标 |
 |---|---:|
@@ -1672,7 +1868,7 @@ Day9 将设计 `BaseModel → OpenAIModel/QwenModel`，用继承、多态、supe
 
 ---
 
-## 40. 今日交付
+## 42. 今日交付
 
 ```text
 course/day08/day08-lesson.md
