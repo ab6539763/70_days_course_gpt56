@@ -672,7 +672,597 @@ Schema v3迁移：v2 messages放入默认session，生成明确迁移session_id�
 
 ---
 
-## 22. 复盘与 Day 9
+## 22. 对象内存模型与实例隔离实验室
+
+### 22.1 两个消息实例
+
+```python
+a = ChatMessage("user", "问题A")
+b = ChatMessage("user", "问题B")
+a.content = "已修改"
+```
+
+b仍为问题B。实例属性存放在各自对象。若错误把content写成类属性，修改共享值会影响没有实例覆盖的对象。
+
+### 22.2 类属性共享规则
+
+`ChatMessage.ALLOWED_ROLES`由所有实例读取。它表达平台级角色集合。不要在某个实例上做：
+
+```python
+message.ALLOWED_ROLES = ("user",)
+```
+
+这会在实例上创建同名属性遮蔽类属性，导致行为难以理解。共享规则由类管理。
+
+### 22.3 默认列表隔离
+
+`PlatformState(contacts=None)` 内部创建新列表。连续两个state，向一个添加Contact，另一个必须为空。若构造器参数写 `contacts=[]`，多个实例共享。
+
+### 22.4 `list(contacts or [])`
+
+传入已有列表时创建浅的新外层列表，防调用者append影响state列表长度；其中Contact对象仍共享引用。契约要准确：容器隔离，不是深复制对象。
+
+### 22.5 属性绑定
+
+`contact.name` 从实例读取。赋值会改变该对象。Day8属性公开，任何调用者可绕过方法写空岗位，Day9用property讨论。
+
+### 22.6 方法绑定
+
+```python
+method = contact.matches
+```
+
+这是绑定方法，已经记住contact实例，后续 `method("python")` 等价于 `contact.matches("python")`。
+
+### 22.7 类调用实例方法
+
+```python
+Contact.matches(contact, "python")
+```
+
+也能工作，显式把contact作为self。日常使用实例调用更清晰。
+
+### 22.8 对象身份
+
+两个Contact字段完全相同，`a is b`仍False；未实现`__eq__`时相等比较通常按身份。Day9讨论相等语义。
+
+### 22.9 垃圾回收边界
+
+对象没有引用后可被回收。JSON文件不是对象本身，只是可恢复状态。重新加载得到新对象身份，但业务字段相同。
+
+### 22.10 聚合引用
+
+PlatformState.contacts持有Contact引用。即使局部变量删除，state仍引用对象。删除列表元素后若无其他引用，对象才可释放。
+
+### 22.11 浅序列化
+
+`to_dict`创建新字典和skills列表引用？Contact当前返回self.skills本身，调用者修改返回字典中的skills会影响对象。这是潜在边界。更严格可返回 `list(self.skills)`。课件记录为代码评审点。
+
+### 22.12 对象与快照
+
+JSON是保存时快照。保存后修改对象但不persist，文件仍旧值；第二进程恢复旧状态。对象存在不等于已持久化。
+
+```mermaid
+graph LR
+    A[Contact实例A] --> AData[实例属性]
+    B[Contact实例B] --> BData[实例属性]
+    A -.共享类规则.-> Class[Contact类]
+    B -.共享类规则.-> Class
+    State[PlatformState] --> A
+    State --> B
+    State --> Messages[ChatMessage实例列表]
+```
+
+### 实验记录
+
+```text
+实例：
+类：
+实例属性：
+类属性：
+修改操作：
+其他实例是否变化：
+容器是否共享：
+对象是否持久化：
+```
+
+---
+
+## 23. 实例方法、类方法、静态方法决策工作坊
+
+### 23.1 决策问题
+
+1. 是否需要读取或修改某个实例？用实例方法。
+2. 是否要创建实例且希望支持子类？用类方法。
+3. 不需要实例/类状态，但逻辑明显属于该领域？静态方法。
+4. 都不属于？普通函数。
+
+### 23.2 `preview` 为什么是实例方法
+
+它读取当前消息content。不同消息预览不同。limit是调用参数，但核心状态来自self。
+
+### 23.3 `to_dict` 为什么是实例方法
+
+序列化当前对象属性。没有实例就没有具体字典。
+
+### 23.4 `from_dict` 为什么是类方法
+
+它根据字典创建新实例。用cls调用构造器，未来子类继承时返回子类。
+
+### 23.5 `system` 为什么是类方法
+
+是命名构造器，预填role并创建实例。相比 `ChatMessage("system",...)` 更表达意图。
+
+### 23.6 `is_valid_role` 为什么静态
+
+只检查候选文本与共享角色。它可读取 `ChatMessage.ALLOWED_ROLES`；若希望多态支持子类角色，更适合类方法读取cls。当前静态选择是教学简化。
+
+### 23.7 `normalize_content` 为什么静态
+
+不依赖实例已有状态，属于Message文本规范。也可做模块函数；放类中便于发现。
+
+### 23.8 `Contact.matches` 为什么实例
+
+搜索当前联系人五字段。query是外部参数，字段来自self。
+
+### 23.9 `Contact.is_valid_email` 为什么静态
+
+创建Contact之前就要校验候选邮箱，不需要已有实例。
+
+### 23.10 `PlatformState.empty` 为什么类方法
+
+命名构造一个空聚合。当前直接 `cls()` 即可，但命名表达业务意图，未来默认值变化只改一处。
+
+### 23.11 `load_state` 为什么普通函数
+
+它涉及文件系统与JSON边界，不是PlatformState内在领域行为。也可设计Repository类，Day10再模块化。
+
+### 23.12 `persist_change` 为什么普通函数
+
+组合revision与文件I/O。把它放state会让领域对象依赖具体存储路径。当前保持边界分离。
+
+```mermaid
+flowchart TD
+    Behavior[一个行为] --> Instance{需要具体实例状态?}
+    Instance -->|是| IM[实例方法 self]
+    Instance -->|否| Class{创建实例或需要类?}
+    Class -->|是| CM[类方法 cls]
+    Class -->|否| Domain{逻辑属于该领域概念?}
+    Domain -->|是| SM[静态方法]
+    Domain -->|否| Function[普通函数/服务]
+```
+
+### 23.13 反例：所有方法都static
+
+若每个方法都接contact参数，类只是命名空间，失去实例行为。应让依赖对象状态的行为成为实例方法。
+
+### 23.14 反例：所有函数都塞PlatformState
+
+文件构建、zip、终端都变方法，形成上帝对象。职责边界比“面向对象纯度”重要。
+
+### 23.15 决策练习答案
+
+| 行为 | 选择 | 理由 |
+|---|---|---|
+| 修改联系人岗位 | 实例 | 修改self.role |
+| 从JSON恢复联系人 | 类 | 构造实例 |
+| 校验邮箱文本 | 静态 | 无实例状态 |
+| 保存平台文件 | 普通/仓储 | I/O边界 |
+| 新建system消息 | 类 | 命名构造 |
+| 统计平台消息 | 实例 | 读取聚合状态 |
+| 计算文件哈希 | 普通 | 不属于领域对象 |
+
+---
+
+## 24. `__init__` 与有效状态专题
+
+### 24.1 构造器职责
+
+构造器应让对象创建后可用。Contact完成基础标准化，ChatMessage清理角色/内容。但当前允许直接构造tool角色，这是已知不变量缺口。
+
+### 24.2 验证位置策略
+
+方案A：构造器拒绝无效值，需异常（Day10）。  
+方案B：类方法create返回结果。  
+方案C：聚合添加前校验。  
+当前采用C，便于Day8不提前异常，但直接构造仍需调用者自律。
+
+### 24.3 参数过多
+
+Contact六参数容易顺序错。关键字调用更清晰；Day13类型注解，后续Pydantic模型。
+
+### 24.4 默认值
+
+skills=None而非[]。owner/contacts/messages同理。默认参数定义时求值规则仍适用类构造器。
+
+### 24.5 标准化与原始值
+
+构造器只保留标准值，不保留原始输入。若审计需要原始值，必须另设计字段和隐私策略，不能隐藏缓存。
+
+### 24.6 派生属性
+
+消息字符数可每次 `len(content)` 计算，不必存第二份。避免内容变化后计数不同步。
+
+### 24.7 构造副作用
+
+`__init__` 不读文件、不发送请求、不print。创建对象应可预测、易测试。I/O交给边界函数。
+
+### 24.8 不返回值
+
+显式从 `__init__` 返回非None会TypeError。对象由`__new__`创建，init负责初始化。Day8不深入new。
+
+---
+
+## 25. ChatMessage 企业级上下文设计
+
+### 25.1 system
+
+定义行为和边界，通常由平台控制。不能让普通用户随意冒充system。
+
+### 25.2 user
+
+用户输入。进入对象前仍需治理、权限和内容安全。role只是结构，不是认证。
+
+### 25.3 assistant
+
+模型输出。保存时应关联模型、时间、token、finish_reason，当前Schema仅最小字段。
+
+### 25.4 tool预告
+
+Day19工具调用会增加tool消息。当前拒绝tool是版本契约，不代表工具角色永远非法。扩展角色要升级测试和Schema策略。
+
+### 25.5 消息顺序
+
+列表顺序就是对话顺序。排序消息会破坏语义。联系人可以排序，消息不能按role排序。
+
+### 25.6 预览
+
+预览只是UI，不能替代完整content保存。切片可能截断语义和敏感片段，日志中需谨慎。
+
+### 25.7 空白
+
+当前折叠所有连续空白，适合短问答；代码、Markdown和Prompt可能需要换行，后续重新设计。
+
+### 25.8 metadata
+
+未来可包含message_id、created_at、model、token usage、references。每个字段需Schema迁移。
+
+### 25.9 消息不保存隐藏推理
+
+只保存面向用户内容，不要求或记录模型内部思维链。审计关注输入、输出、工具和引用。
+
+### 25.10 对话窗口
+
+作业Conversation.window用切片返回最近N条。生产还需token预算、摘要和系统消息保留。
+
+```mermaid
+sequenceDiagram
+    participant Config as 平台配置
+    participant User as 用户
+    participant Model as 模型
+    participant History as 消息历史
+    Config->>History: system message
+    User->>History: user message
+    History->>Model: 有序messages
+    Model-->>History: assistant message
+    Note over History: 只保存结构化可见内容
+```
+
+---
+
+## 26. Contact 对象深入评审
+
+### 26.1 对象职责
+
+保存单个联系人状态、序列化、匹配、更新自身岗位。跨联系人唯一性不属于单个对象。
+
+### 26.2 email验证
+
+静态方法可在构造前用。格式通过不证明归属。继续使用 `.test`。
+
+### 26.3 skills
+
+构造器调用静态方法得到排序新列表。传入列表后修改原列表不应影响对象，因为集合推导创建新结果。
+
+### 26.4 matches
+
+实例方法封装五字段。未来字段增加时只改对象；但权限过滤仍在聚合/服务。
+
+### 26.5 update_role
+
+幂等：相同返回False；空值返回False；变化修改并True。revision由编排决定。
+
+### 26.6 to_dict暴露
+
+返回数据传输对象。建议复制skills，防止外部修改。当前测试未覆盖，作为进阶修复。
+
+### 26.7 from_dict兼容
+
+`data.get("skills",[])` 支持旧联系人缺skills。但过度默认可能掩盖损坏，需要Schema策略。
+
+### 26.8 身份与相等
+
+contact_id是业务标识，但对象相等尚未重写。集合中不能直接依赖Contact去重。Day9实现或讨论`__eq__/__hash__`。
+
+---
+
+## 27. PlatformState 聚合根专题
+
+### 27.1 聚合边界
+
+联系人唯一、邮箱唯一、消息列表、revision在同一状态。一次保存形成一致快照。
+
+### 27.2 add_contact
+
+`any`短路扫描。数据量大时数据库唯一索引，当前列表足够。
+
+### 27.3 search_contacts
+
+把匹配委托给Contact，排序由聚合决定。职责协作而非重复字段逻辑。
+
+### 27.4 add_message
+
+聚合负责角色和空内容门禁。成功后消息对象进入顺序列表。
+
+### 27.5 statistics
+
+角色字典始终包含三角色0值，输出稳定。联系人和消息数来自对象列表。
+
+### 27.6 to_dict
+
+递归调用每个对象的序列化接口，形成纯dict/list。json模块不认识领域对象，但认识转换结果。
+
+### 27.7 from_dict
+
+对象图重建入口。它同时承担版本判断，未来迁移服务可独立，避免类方法过大。
+
+### 27.8 revision
+
+对象持有revision，persist_change修改后保存。业务方法本身不自动revision，允许批量操作。
+
+---
+
+## 28. Schema v1→v2 迁移桌面演练
+
+### 28.1 前置检查
+
+- 顶层dict。
+- schema1。
+- revision/owner/contacts存在。
+- contacts列表。
+- 每条可Contact.from_dict。
+
+### 28.2 转换
+
+- owner原样。
+- contacts字典→Contact对象。
+- messages=[]。
+- state revision保留4。
+- migrated=True。
+
+### 28.3 持久化
+
+run_cli识别migrated，调用persist，revision5，to_dict输出schema2。
+
+### 28.4 验证
+
+- 联系人数不变。
+- 编号/邮箱集合不变。
+- messages空。
+- schema2。
+- revision+1。
+- 第二次加载status loaded，不重复迁移。
+
+### 28.5 失败
+
+未知schema返回None/error，不写。字段缺失拒绝。JSON语法错误Day10。
+
+### 28.6 回滚
+
+当前教学直接覆盖。生产先备份v1；若v2运行后新增消息，再回滚v1会丢消息，需要逆迁移或禁止回滚。
+
+```mermaid
+flowchart LR
+    V1[v1 revision4] --> Parse[恢复Contact对象]
+    Parse --> AddField[messages空]
+    AddField --> State[PlatformState]
+    State --> Increment[revision5]
+    Increment --> V2[v2 JSON]
+    V2 --> Reload[再次加载]
+    Reload --> Loaded[loaded非migrated]
+```
+
+### 28.7 迁移测试为什么独立
+
+普通新建测试不能证明旧数据兼容。必须构造真实v1文档，从磁盘加载并检查字节结果。
+
+---
+
+## 29. 面向对象测试矩阵
+
+| 类/函数 | 正常 | 边界 | 失败 | 隔离 |
+|---|---|---|---|---|
+| ChatMessage | 三角色 | 预览0/长 | tool/空 | 两实例 |
+| Contact | 标准化 | 空skills | 邮箱非法 | skills不共享 |
+| PlatformState | 添加统计 | 空列表 | 重复/错误消息 | 两state |
+| from_dict | v1/v2 | 缺skills | schema99 | 往返 |
+| CLI | 首次恢复 | 无联系人 | 错菜单 | 进程 |
+| Release | 双进程 | 空数据 | 哈希/白名单 | 临时目录 |
+
+### 29.1 对象状态断言
+
+不只检查类型，还检查属性标准化。
+
+### 29.2 行为断言
+
+matches/update_role/preview返回与副作用。
+
+### 29.3 往返断言
+
+`from_dict(to_dict(obj)).to_dict() == obj.to_dict()`。
+
+### 29.4 实例隔离
+
+修改一个实例列表不影响另一个。
+
+### 29.5 聚合规则
+
+重复联系人和非法消息不进入列表。
+
+### 29.6 迁移
+
+v1→对象→v2→再次加载。
+
+### 29.7 E2E
+
+三个角色顺序和revision。
+
+### 29.8 发布
+
+脚本哈希、zip无JSON、解压消息恢复。
+
+---
+
+## 30. 课堂分镜与讲师手册
+
+### 30.1 09:00-09:30 字典痛点
+
+让学员列出Day7哪些函数总是接触contact字典。讨论哪些行为真正属于联系人。
+
+### 30.2 09:30-10:00 第一个类
+
+只写ChatMessage和两个实例。打印id/属性，修改一个观察隔离。
+
+### 30.3 10:10-10:40 self与实例方法
+
+手动调用类方法形式，理解绑定。故意漏self观察TypeError。
+
+### 30.4 10:40-11:10 类属性
+
+比较实例属性和ALLOWED_ROLES。禁止用可变类属性存每个对象消息。
+
+### 30.5 11:10-11:40 三类方法
+
+用决策图为preview/from_dict/is_valid_role分类。每组给理由。
+
+### 30.6 11:40-12:00 JSON往返
+
+对象不能直接dump，先to_dict。加载后from_dict。
+
+### 30.7 14:00-14:40 Contact重构
+
+把Day7工厂/搜索/更新迁入类，运行旧业务例子。
+
+### 30.8 14:40-15:20 PlatformState
+
+实现聚合唯一与消息规则，写单测。
+
+### 30.9 15:30-16:00 Schema迁移
+
+先画v1/v2差异，禁止编造messages。实现from_dict返回migrated。
+
+### 30.10 16:00-16:30 CLI
+
+新菜单添加消息/历史。联系人不需重新实现全部Day7 CRUD，聚焦对象。
+
+### 30.11 16:30-17:00 测试
+
+模型单测、迁移磁盘测试、双进程。
+
+### 30.12 17:00-17:30 发布
+
+构建/解压双进程消息恢复。检查运行JSON删除。
+
+### 30.13 晚自习评审
+
+每组指出一个应是实例方法、一个类方法、一个静态方法、一个应留普通函数的行为。
+
+---
+
+## 31. OOP 周测题与答案
+
+1. `self`由谁传？实例调用时Python传当前对象。  
+2. `cls`是什么？当前类。  
+3. 类属性和实例属性区别？共享规则与对象状态。  
+4. `__init__`返回？应None。  
+5. 类方法装饰器？`@classmethod`。  
+6. 静态方法装饰器？`@staticmethod`。  
+7. from_dict选择？类方法。  
+8. preview选择？实例方法。  
+9. 邮箱候选校验？静态或普通函数。  
+10. save_state？普通仓储函数。  
+11. 默认messages=[]风险？实例共享。  
+12. 对象可直接JSON？默认不。  
+13. to_dict返回什么？纯JSON兼容结构。  
+14. v1没有messages怎么办？迁移为空。  
+15. 迁移后revision？+1。  
+16. 未知版本？拒绝不覆盖。  
+17. 聚合根作用？跨对象规则和一致边界。  
+18. Contact能检查全局邮箱唯一吗？单独不能。  
+19. 对象字段相同是否同一对象？不是。  
+20. 封装是否权限？不是。  
+21. role类属性为何元组？共享固定候选。  
+22. 查询可修改对象吗？不应隐藏副作用。  
+23. list浅复制后对象共享吗？共享内部引用。  
+24. 类过大风险？上帝对象。  
+25. 静态方法滥用？类成为命名空间。  
+26. 继承今天使用吗？不，Day9。  
+27. property今天使用吗？Day9。  
+28. 对象迁移为何要测试磁盘？证明真实边界。  
+29. 消息顺序能排序吗？不能，语义有序。  
+30. system角色由谁控制？平台受控配置。
+
+评分：每题2分，共60；设计题40：
+
+31. 设计Conversation类（10）。  
+32. 设计v3迁移（10）。  
+33. 说明对象与字典边界（10）。  
+34. 说明聚合和仓储职责（10）。
+
+完整答案：Conversation参考见作业；v3将v2 messages放默认会话，不编造其他会话；对象承载行为、字典用于传输；聚合管跨对象规则、仓储管I/O。
+
+---
+
+## 32. 安全威胁建模
+
+```mermaid
+flowchart TD
+    Message[ChatMessage] --> M1[用户伪装system]
+    Message --> M2[敏感内容持久化]
+    Contact[Contact] --> C1[真实个人数据]
+    Migration[迁移] --> G1[旧数据覆盖]
+    Object[公开属性] --> O1[绕过方法]
+    Release[发布] --> R1[JSON泄漏]
+    Control[控制] --> X1[角色白名单]
+    Control --> X2[模拟数据]
+    Control --> X3[迁移版本拒绝]
+    Control --> X4[制品白名单]
+```
+
+当前角色白名单只校验文本，不认证调用者。公开属性可绕过方法。真实系统需要API边界、权限、模型验证和审计。
+
+---
+
+## 33. 项目代码评审清单
+
+- [ ] 每类职责一句话。
+- [ ] 构造器无I/O。
+- [ ] 默认可变对象隔离。
+- [ ] 三类方法选择有理由。
+- [ ] Contact行为不重复在聚合。
+- [ ] 跨对象唯一在PlatformState。
+- [ ] 对象to_dict纯JSON。
+- [ ] from_dict支持v1/v2。
+- [ ] 迁移不编造消息。
+- [ ] 未知版本不写。
+- [ ] 消息顺序保留。
+- [ ] CLI只在changed持久化。
+- [ ] 导入不运行。
+- [ ] 发布无数据。
+
+---
+
+## 34. 复盘与 Day 9
 
 保持：类职责、实例隔离、三类方法、对象JSON边界、迁移证据。  
 停止：所有代码塞class、共享默认列表、对象直接dump、迁移编造数据。  
@@ -690,7 +1280,7 @@ Day9 将设计 `BaseModel → OpenAIModel/QwenModel`，用继承、多态、supe
 
 ---
 
-## 23. 教学质量门禁
+## 35. 教学质量门禁
 
 | 指标 | 目标 |
 |---|---:|
@@ -707,7 +1297,7 @@ Day9 将设计 `BaseModel → OpenAIModel/QwenModel`，用继承、多态、supe
 
 ---
 
-## 24. 今日交付
+## 36. 今日交付
 
 ```text
 course/day08/day08-lesson.md
