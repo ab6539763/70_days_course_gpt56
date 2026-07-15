@@ -75,6 +75,24 @@ python3 course/day04/deploy/build_release.py --output artifacts/day04
 Day 4 门禁覆盖多任务 CRUD、优先级排序、前三条切片、标签标准化去重、
 列表与编号集合一致性、批量清理、编号复用、身份锁定及独立部署后 CRUD。
 
+## Day 5 字典、JSON 持久化与发布
+
+- [Day 5 完整课件：字典、JSON Schema 与持久化](course/day05/day05-lesson.md)
+- [JSON 持久化任务台账](course/day05/solution/persistent_task_board.py)
+- [首次/恢复/版本拒绝测试](course/day05/tests/test_persistence.py)
+- [无数据制品与部署恢复测试](course/day05/tests/test_release.py)
+
+```bash
+python3 course/day05/solution/persistent_task_board.py
+python3 course/day05/tests/test_persistence.py
+python3 course/day05/tests/test_release.py
+python3 tools/verify_day05.py
+python3 course/day05/deploy/build_release.py --output artifacts/day05
+```
+
+Day 5 门禁覆盖字典模型、UTF-8 JSON、schema_version、revision、首次初始化、
+跨进程恢复、CRUD 落盘、未知版本拒绝、空文件初始化及运行数据不进入制品。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
