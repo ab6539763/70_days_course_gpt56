@@ -93,6 +93,26 @@ python3 course/day05/deploy/build_release.py --output artifacts/day05
 Day 5 门禁覆盖字典模型、UTF-8 JSON、schema_version、revision、首次初始化、
 跨进程恢复、CRUD 落盘、未知版本拒绝、空文件初始化及运行数据不进入制品。
 
+## Day 6 函数化服务、测试与发布
+
+- [Day 6 完整课件：函数、参数、返回值与作用域](course/day06/day06-lesson.md)
+- [函数化 JSON 任务服务](course/day06/solution/functional_task_board.py)
+- [函数单元测试](course/day06/tests/test_functions.py)
+- [CLI 双进程测试](course/day06/tests/test_cli.py)
+- [发布部署测试](course/day06/tests/test_release.py)
+
+```bash
+python3 course/day06/solution/functional_task_board.py
+python3 course/day06/tests/test_functions.py
+python3 course/day06/tests/test_cli.py
+python3 course/day06/tests/test_release.py
+python3 tools/verify_day06.py
+python3 course/day06/deploy/build_release.py --output artifacts/day06
+```
+
+Day 6 门禁覆盖位置/关键字/默认参数、`*args/**kwargs`、返回值、作用域、
+可变默认隔离、CRUD 函数契约、递归边界、主入口、CLI 与部署恢复。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
