@@ -113,6 +113,26 @@ python3 course/day06/deploy/build_release.py --output artifacts/day06
 Day 6 门禁覆盖位置/关键字/默认参数、`*args/**kwargs`、返回值、作用域、
 可变默认隔离、CRUD 函数契约、递归边界、主入口、CLI 与部署恢复。
 
+## Day 7 第一周阶段项目与周测
+
+- [Day 7 完整课件：企业联系人目录与第一周周测](course/day07/day07-lesson.md)
+- [联系人目录参考实现](course/day07/solution/contact_directory.py)
+- [联系人函数单测](course/day07/tests/test_functions.py)
+- [双进程 CLI 测试](course/day07/tests/test_cli.py)
+- [发布部署测试](course/day07/tests/test_release.py)
+
+```bash
+python3 course/day07/solution/contact_directory.py
+python3 course/day07/tests/test_functions.py
+python3 course/day07/tests/test_cli.py
+python3 course/day07/tests/test_release.py
+python3 tools/verify_day07.py
+python3 course/day07/deploy/build_release.py --output artifacts/day07
+```
+
+Day 7 综合门禁覆盖联系人编号/模拟邮箱双唯一、五字段搜索、岗位更新、
+部门与技能统计、JSON 跨进程恢复、第一周周测、隐私边界和独立部署。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
