@@ -1487,17 +1487,401 @@ Day8对象、Day10异常模块、Day24数据库、RAG语义搜索。
 
 ---
 
-## 29. 第一周综合复盘
+## 29. 第一周周测 B 卷：补考与拔高
 
-### 29.1 做到了什么
+> 建议时长：90 分钟。满分 100。所有代码只能使用第一周知识。  
+> B 卷用于缺考补测和优秀学员拔高，不与 A 卷重复背答案。
+
+### 29.1 数据类型与字符串（20分）
+
+**题1（4分）**  
+员工编号输入 `" e 10  "`，写一行代码得到 `E10`，并说明为什么仍使用字符串而不是整数。
+
+**题2（4分）**  
+任务描述为 `"  Review   RAG\tReport  "`，写表达式得到 `"Review RAG Report"`。说明 `split(" ")` 与 `split()` 的差异。
+
+**题3（4分）**  
+解释 `"False"`、`False`、`0` 的类型与业务语义，给出一个联系人项目中的使用场景。
+
+**题4（4分）**  
+文本 `"Agent RAG Agent"`，检索词 `"agent"`，实现大小写无关次数与首次索引。预期次数和索引是什么？
+
+**题5（4分）**  
+写出 `text[:10]` 在文本长度为0、5、20时的行为，并说明为什么比连续访问十个索引安全。
+
+### 29.2 流程控制（20分）
+
+**题6（4分）**  
+修复范围条件：
+
+```python
+if priority < 1 and priority > 5:
+    print("无效")
+```
+
+解释逻辑错误。
+
+**题7（4分）**  
+用 `for range` 实现邮箱最多三次输入；只要求非空且包含一个@。三次失败退出码2。
+
+**题8（4分）**  
+解释下面循环为何可能无限执行，并给出两个修复方向：
+
+```python
+while True:
+    value = input("输入：")
+    if value == "":
+        print("不能为空")
+```
+
+**题9（4分）**  
+菜单输入非法时应该 `continue`、`break` 还是 `return`？分别说明三者后果。
+
+**题10（4分）**  
+写人工复核规则：搜索无结果，或联系人部门为财务部且操作者不是财务部。
+
+### 29.3 数据结构（20分）
+
+**题11（4分）**  
+在 list、tuple、set、dict 中为以下数据选结构：联系人集合、固定部门、唯一技能、联系人记录。解释。
+
+**题12（4分）**  
+给定：
+
+```python
+contacts = [
+    {"name": "李梅", "department": "技术部"},
+    {"name": "王芳", "department": "销售部"},
+    {"name": "周宁", "department": "产品部"},
+]
+```
+
+用列表推导式筛选技术部。
+
+**题13（4分）**  
+统计每个部门人数，不能提前写死部门名。输出字典。
+
+**题14（4分）**  
+合并两名联系人技能，去重并稳定展示：
+
+```python
+["python", "rag"], ["RAG", "agent"]
+```
+
+先说明为何要 lower 再 set。
+
+**题15（4分）**  
+解释浅复制：
+
+```python
+copy = contacts[:]
+copy[0]["name"] = "变化"
+```
+
+原 contacts 是否变化？为什么？
+
+### 29.4 字典与 JSON（20分）
+
+**题16（4分）**  
+写一份最小联系人 JSON，包含 schema_version、revision、owner、contacts，类型必须正确。
+
+**题17（4分）**  
+说明以下四个函数的输入输出：`loads`、`dumps`、`load`、`dump`。
+
+**题18（4分）**  
+某文件 schema_version=2，程序只支持1。正确行为是什么？为什么不能直接把版本改成1？
+
+**题19（4分）**  
+列出哪些操作应增加 revision：成功新增、搜索、失败删除、成功更新、相同值更新、成功删除。
+
+**题20（4分）**  
+构建过程运行冒烟后目录出现 `nexus_contacts.json`。给出打包前的处理和两项自动检查。
+
+### 29.5 函数与工程（20分）
+
+**题21（4分）**  
+修复：
+
+```python
+def create_contact(skills=[]):
+    skills.append("python")
+    return {"skills": skills}
+```
+
+并说明两次调用的风险。
+
+**题22（4分）**  
+设计 `add_contact(data, contact)` 返回值，使 CLI 能判断是否保存。至少覆盖成功、重复编号、重复邮箱。
+
+**题23（4分）**  
+为什么 `search_contacts` 不应该 print？它应返回什么？
+
+**题24（4分）**  
+解释 `if __name__ == "__main__":` 对单元测试的价值。
+
+**题25（4分）**  
+给出联系人目录的测试分层：至少三个单元测试、两个集成/E2E、一个部署测试。
+
+---
+
+## 30. B 卷完整参考答案与评分细则
+
+### 30.1 题1答案
+
+```python
+employee_id = raw.strip().upper().replace(" ", "")
+```
+
+编号含字母且不参与算术，字符串保留标识语义。只写代码2分，解释2分。
+
+### 30.2 题2答案
+
+```python
+clean = " ".join(raw.split())
+```
+
+无参数 split 按连续任意空白切分，处理Tab并忽略首尾；`split(" ")` 只按半角空格且可能产生空项。代码2分，差异2分。
+
+### 30.3 题3答案
+
+`"False"` 是str，`False`是bool，`0`是int。联系人是否启用应使用bool；字符串常用于外部输入，需转换；0可表示计数，不应用字符串假值代替。类型各1分，场景1分。
+
+### 30.4 题4答案
+
+```python
+searchable = text.lower()
+count = searchable.count(keyword.lower())
+index = searchable.find(keyword.lower())
+```
+
+次数2，首次索引0。代码2分，结果2分。
+
+### 30.5 题5答案
+
+长度0返回空串，长度5返回全部5字符，长度20返回前10字符。切片越界安全，逐索引可能IndexError。每项1分。
+
+### 30.6 题6答案
+
+改为 `priority < 1 or priority > 5`。一个数不可能同时小于1和大于5；越界发生在任一端。修复2分，解释2分。
+
+### 30.7 题7答案
+
+```python
+for attempt in range(1, 4):
+    email = input("邮箱：").strip().lower()
+    if email != "" and email.count("@") == 1:
+        break
+    print("邮箱无效")
+else:
+    raise SystemExit(2)
+```
+
+有限三次、校验、break、for-else各1分。
+
+### 30.8 题8答案
+
+空值路径没有 continue也会自然下一轮，但非空也没有break，因此任何输入都继续。有效时break；或使用有变化的while条件。指出根因2分，两种修复各1分。
+
+### 30.9 题9答案
+
+非法菜单通常反馈后继续下一轮；`continue`明确跳下一轮，循环末尾也可自然返回顶部；break结束菜单；return结束整个函数。每个后果1分，业务选择1分。
+
+### 30.10 题10答案
+
+```python
+requires_review = (
+    len(results) == 0
+    or (
+        contact_department == "财务部"
+        and operator_department != "财务部"
+    )
+)
+```
+
+逻辑正确3分，括号/可读性1分。
+
+### 30.11 题11答案
+
+联系人集合list（有序可变）；固定部门tuple（当前固定）；唯一技能set；联系人记录dict（具名字段）。每项1分。
+
+### 30.12 题12答案
+
+```python
+technical = [
+    contact for contact in contacts
+    if contact["department"] == "技术部"
+]
+```
+
+结构和条件各2分。
+
+### 30.13 题13答案
+
+```python
+counts = {}
+for contact in contacts:
+    department = contact["department"]
+    counts[department] = counts.get(department, 0) + 1
+```
+
+初始化、遍历、get默认、累加各1分。
+
+### 30.14 题14答案
+
+```python
+skills = sorted({
+    skill.lower()
+    for group in skill_groups
+    for skill in group
+})
+```
+
+或普通嵌套循环。结果 `["agent","python","rag"]`。先lower让RAG/rag在去重前成为同值。代码3分，解释1分。
+
+### 30.15 题15答案
+
+原contacts中第一条name也变化。切片只复制外层列表，内部字典仍共享引用。结论2分，浅复制解释2分。
+
+### 30.16 题16答案
+
+```json
+{
+  "schema_version": 1,
+  "revision": 0,
+  "owner": null,
+  "contacts": []
+}
+```
+
+四字段及类型每项1分。
+
+### 30.17 题17答案
+
+loads：JSON字符串→Python；dumps：Python→JSON字符串；load：文件对象→Python；dump：Python→文件对象。每项1分。
+
+### 30.18 题18答案
+
+退出非零、提示不支持、保留原文件且不写。不能手改版本，因为结构可能真的不同，改标签会让程序错误解释并覆盖。行为2分，原因2分。
+
+### 30.19 题19答案
+
+增加：成功新增、成功更新、成功删除。搜索、失败删除、相同值更新不增加。六项合计4分，错一项扣1，最低0。
+
+### 30.20 题20答案
+
+验证冒烟后删除运行JSON；检查暂存目录文件白名单；检查zip所有名称不含JSON。处理2分，两检查各1分。
+
+### 30.21 题21答案
+
+```python
+def create_contact(skills=None):
+    if skills is None:
+        skills = []
+    skills.append("python")
+    return {"skills": skills}
+```
+
+原默认列表跨调用共享，第二次包含前次修改。修复3分，解释1分。
+
+### 30.22 题22答案
+
+建议统一返回 `(changed, message)`。成功append返回True；编号重复False；邮箱重复False；失败不修改data。返回形状1分，三个路径各1分。
+
+### 30.23 题23答案
+
+搜索属于领域查询，print会耦合CLI且调用者拿不到结构。应返回排序后的联系人列表，空词返回空列表。理由2分，返回2分。
+
+### 30.24 题24答案
+
+模块导入时只定义函数，不启动input/CLI或写文件；直接作为脚本运行时才启动。测试可安全import并调用函数。两部分各2分。
+
+### 30.25 题25答案
+
+单元：邮箱规范化、双唯一、搜索/统计；集成/E2E：首次保存、第二进程恢复、schema拒绝；部署：zip无数据、哈希、解压双进程。类别与例子完整4分。
+
+### B卷成绩解释
+
+- 90-100：可进入Day8拔高任务。
+- 75-89：通过，订正错误。
+- 60-74：补做对应专题。
+- 60以下：重新完成联系人项目最小闭环。
+- 隐私红线违规：先清理数据，再重新评审，不以分数抵消。
+
+---
+
+## 31. B 卷上机附加题与答案
+
+### 附加题1：部门过滤（10分）
+
+实现 `filter_by_department`，支持研发部别名，未知部门返回空，不修改主列表。
+
+答案见课后作业；测试技术部和研发部应得到同一结果。
+
+### 附加题2：邮箱更新（10分）
+
+实现更新C2为新邮箱，若邮箱属于C1拒绝。相同邮箱不算变化。验证revision只在变化时增加。
+
+参考：
+
+```python
+valid, email, reason = normalize_email(raw_email)
+if not valid:
+    return False, reason
+changed, message = update_contact(data, "C2", email=email)
+if changed:
+    persist_change(data, path)
+```
+
+### 附加题3：搜索字段标注（10分）
+
+返回不仅含联系人，还标注命中的字段。建议结果：
+
+```python
+{
+    "contact": contact,
+    "matched_fields": ["skills", "role"]
+}
+```
+
+字段列表去重排序。当前子串搜索逐字段判断，不能只拼接后丢失来源。
+
+### 附加题4：数据完整性检查（10分）
+
+实现检查编号集合长度、邮箱集合长度是否等于联系人数量；字段缺失返回问题列表，不直接修复或覆盖。
+
+参考核心：
+
+```python
+ids = [item.get("contact_id") for item in contacts]
+emails = [item.get("email") for item in contacts]
+issues = []
+if len(set(ids)) != len(ids):
+    issues.append("联系人编号重复")
+if len(set(emails)) != len(emails):
+    issues.append("邮箱重复")
+```
+
+### 附加题5：发布验证报告（10分）
+
+写出制品文件、哈希、首次进程、恢复进程、运行数据隔离、退出码六项证据。不得只写“部署成功”。
+
+### 附加题评分
+
+每题10分作为拔高，不计基础100分。代码6、测试3、边界说明1。优秀学员至少完成三题。
+
+---
+
+## 32. 第一周综合复盘
+
+### 32.1 做到了什么
 
 从零环境到函数化持久应用，建立需求、测试、发布习惯。代码规模不是目标，能力闭环是。
 
-### 29.2 仍缺什么
+### 32.2 仍缺什么
 
 对象模型、异常、模块包、文件可靠性、网络API、类型注解、数据库、权限与并发。
 
-### 29.3 技术债
+### 32.3 技术债
 
 | 债务 | 计划 |
 |---|---|
@@ -1508,11 +1892,11 @@ Day8对象、Day10异常模块、Day24数据库、RAG语义搜索。
 | 无权威身份 | 后续认证 |
 | 子串搜索 | RAG阶段 |
 
-### 29.4 Day 8 输入
+### 32.4 Day 8 输入
 
 把联系人字典重构为 Contact 类，理解实例属性、方法、`__init__`、类方法、静态方法，并保持JSON兼容。
 
-### 29.5 离场检查
+### 32.5 离场检查
 
 - [ ] 能独立建模。
 - [ ] 能写CRUD函数。
@@ -1527,7 +1911,7 @@ Day8对象、Day10异常模块、Day24数据库、RAG语义搜索。
 
 ---
 
-## 30. 教学质量门禁
+## 33. 教学质量门禁
 
 | 指标 | 目标 |
 |---|---:|
@@ -1546,7 +1930,7 @@ Day8对象、Day10异常模块、Day24数据库、RAG语义搜索。
 
 ---
 
-## 31. 今日交付与收尾旁白
+## 34. 今日交付与收尾旁白
 
 ```text
 course/day07/day07-lesson.md
