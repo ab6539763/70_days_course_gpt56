@@ -133,6 +133,26 @@ python3 course/day07/deploy/build_release.py --output artifacts/day07
 Day 7 综合门禁覆盖联系人编号/模拟邮箱双唯一、五字段搜索、岗位更新、
 部门与技能统计、JSON 跨进程恢复、第一周周测、隐私边界和独立部署。
 
+## Day 8 面向对象模型与 Schema 迁移
+
+- [Day 8 完整课件：Contact、ChatMessage 与平台状态对象](course/day08/day08-lesson.md)
+- [面向对象平台参考实现](course/day08/solution/oop_platform.py)
+- [领域模型与迁移单测](course/day08/tests/test_models.py)
+- [对象 CLI 双进程测试](course/day08/tests/test_cli.py)
+- [发布部署测试](course/day08/tests/test_release.py)
+
+```bash
+python3 course/day08/solution/oop_platform.py
+python3 course/day08/tests/test_models.py
+python3 course/day08/tests/test_cli.py
+python3 course/day08/tests/test_release.py
+python3 tools/verify_day08.py
+python3 course/day08/deploy/build_release.py --output artifacts/day08
+```
+
+Day 8 门禁覆盖类与实例、`__init__`、实例/类/静态方法、对象 JSON 往返、
+Contact/ChatMessage 聚合、Schema v1→v2 迁移和部署后消息恢复。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
