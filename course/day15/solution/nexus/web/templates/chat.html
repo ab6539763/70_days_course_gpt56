@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智枢 NexusAI Web 对话工作台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>智枢 NexusAI Web 对话工作台</h1>
+      <p class="meta">版本 {{ app_version }}｜Mock={{ '是' if mock_mode else '否' }}</p>
+    </div>
+    <div class="status" id="status">正在连接…</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel messages-panel">
+      <div class="panel-head">
+        <h2>会话历史</h2>
+        <button type="button" id="clearBtn" class="secondary">清空历史</button>
+      </div>
+      <ul id="messageList" class="message-list"></ul>
+    </section>
+
+    <section class="panel composer-panel">
+      <form id="chatForm">
+        <label for="promptInput">输入问题</label>
+        <textarea id="promptInput" rows="4" placeholder="请输入您的问题，Enter 发送，Shift+Enter 换行"></textarea>
+        <div class="actions">
+          <button type="submit" id="sendBtn">发送</button>
+        </div>
+      </form>
+      <p id="feedback" class="feedback" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>

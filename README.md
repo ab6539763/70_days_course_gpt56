@@ -275,6 +275,25 @@ python3 course/day14/deploy/build_release.py --output artifacts/day14
 Day 14 门禁覆盖多轮 history 持久化、slash 命令、结构化日志 trace_id、
 菜单 14 与 `--chat`、发布 ZIP 与 Day1-13 历史回归。
 
+## Day 15 Phase2 开篇：Flask Web 对话工作台
+
+- [Day 15 完整课件：Flask、REST API 与 Web 首屏](course/day15/day15-lesson.md)
+- [Web 工作台参考实现](course/day15/solution/)
+- [Flask Web API 单测](course/day15/tests/test_web.py)
+- [CLI 与 --web 测试](course/day15/tests/test_cli.py)
+- [Web 发布部署测试](course/day15/tests/test_release.py)
+
+```bash
+pip install -r course/day15/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+cd course/day15/solution && PYTHONPATH=. python3 main.py --web
+python3 tools/verify_day15.py
+python3 course/day15/deploy/build_release.py --output artifacts/day15
+```
+
+Day 15 门禁覆盖 Flask Web 路由、REST 多轮 API、Jinja2 首屏、
+`main.py --web`、发布 ZIP 与 Day1-14 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
