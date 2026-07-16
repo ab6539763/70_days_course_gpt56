@@ -194,6 +194,26 @@ python3 course/day10/deploy/build_release.py --output artifacts/day10
 Day 10 门禁覆盖包结构拆分、绝对导入、`if __name__ == "__main__"`、五类自定义异常、
 try/except 退出码、requirements.txt、发布无 pycache/运行数据与 Day1-9 历史回归。
 
+## Day 11 文件操作、语料导入与 RAG 前置
+
+- [Day 11 完整课件：pathlib、UTF-8、正则与批量语料](course/day11/day11-lesson.md)
+- [语料平台参考实现](course/day11/solution/)
+- [语料模块与迁移单测](course/day11/tests/test_documents.py)
+- [语料 CLI 双进程测试](course/day11/tests/test_cli.py)
+- [语料发布部署测试](course/day11/tests/test_release.py)
+
+```bash
+cd course/day11/solution && PYTHONPATH=. python3 main.py
+python3 course/day11/tests/test_documents.py
+python3 course/day11/tests/test_cli.py
+python3 course/day11/tests/test_release.py
+python3 tools/verify_day11.py
+python3 course/day11/deploy/build_release.py --output artifacts/day11
+```
+
+Day 11 门禁覆盖 pathlib 语料发现、UTF-8/with 读取、csv/json 解析、re 关键词统计、
+Schema v3→v4 迁移、CLI 语料导入检索、示例 corpus  fixtures 与 Day1-10 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
