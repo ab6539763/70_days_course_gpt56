@@ -294,6 +294,26 @@ python3 course/day15/deploy/build_release.py --output artifacts/day15
 Day 15 门禁覆盖 Flask Web 路由、REST 多轮 API、Jinja2 首屏、
 `main.py --web`、发布 ZIP 与 Day1-14 历史回归。
 
+## Day 16 API 契约、OpenAPI 与标准错误码
+
+- [Day 16 完整课件：OpenAPI 3.0、ErrorResponse、Swagger UI](course/day16/day16-lesson.md)
+- [API 契约参考实现](course/day16/solution/)
+- [OpenAPI 与校验单测](course/day16/tests/test_contract.py)
+- [Web API 集成测试](course/day16/tests/test_web.py)
+- [发布部署测试](course/day16/tests/test_release.py)
+
+```bash
+pip install -r course/day16/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+cd course/day16/solution && PYTHONPATH=. python3 main.py --web
+# 浏览器访问 /docs 与 /api/openapi.json
+python3 tools/verify_day16.py
+python3 course/day16/deploy/build_release.py --output artifacts/day16
+```
+
+Day 16 门禁覆盖 OpenAPI 3.0、标准 error.code、请求校验、Swagger UI、
+菜单 16 与 Day1-15 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
