@@ -236,6 +236,25 @@ python3 course/day12/deploy/build_release.py --output artifacts/day12
 Day 12 门禁覆盖 HTTP/requests、Bearer 鉴权、Chat Completions 解析、Mock API 测试、
 菜单 12 真实 API 对话、菜单 9 模拟回退、Key 不入库与 Day1-11 历史回归。
 
+## Day 13 dotenv、装饰器重试与类型注解
+
+- [Day 13 完整课件：dotenv、装饰器、生成器与 API 重试](course/day13/day13-lesson.md)
+- [配置与重试平台参考实现](course/day13/solution/)
+- [dotenv/装饰器/生成器单测](course/day13/tests/test_dotenv.py)
+- [API 重试与 Mock 测试](course/day13/tests/test_api.py)
+- [配置 CLI 与发布测试](course/day13/tests/test_cli.py)
+
+```bash
+pip install -r course/day13/solution/requirements.txt
+cp course/day13/solution/.env.example course/day13/solution/.env
+cd course/day13/solution && PYTHONPATH=. python3 main.py
+python3 tools/verify_day13.py
+python3 course/day13/deploy/build_release.py --output artifacts/day13
+```
+
+Day 13 门禁覆盖 python-dotenv、@retry_api_call、类型注解、yield 消息迭代、
+菜单 13 配置脱敏、API 重试与 Day1-12 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
