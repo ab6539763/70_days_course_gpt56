@@ -173,6 +173,27 @@ python3 course/day09/deploy/build_release.py --output artifacts/day09
 Day 9 门禁覆盖继承、`super()`、多态、`@property`、`__str__`/`__repr__`/`__call__`、
 `create_model` 工厂、Schema v2→v3 迁移、模型切换持久化、模拟对话与 Day1-8 历史回归。
 
+## Day 10 模块化包、异常处理与发布
+
+- [Day 10 完整课件：模块、包、异常与 requirements](course/day10/day10-lesson.md)
+- [nexus 模块化平台参考实现](course/day10/solution/)
+- [包结构与异常单测](course/day10/tests/test_modules.py)
+- [模块化 CLI 双进程测试](course/day10/tests/test_cli.py)
+- [包结构发布部署测试](course/day10/tests/test_release.py)
+
+```bash
+cd course/day10/solution && PYTHONPATH=. python3 main.py
+cd course/day10/solution && PYTHONPATH=. python3 -m nexus
+python3 course/day10/tests/test_modules.py
+python3 course/day10/tests/test_cli.py
+python3 course/day10/tests/test_release.py
+python3 tools/verify_day10.py
+python3 course/day10/deploy/build_release.py --output artifacts/day10
+```
+
+Day 10 门禁覆盖包结构拆分、绝对导入、`if __name__ == "__main__"`、五类自定义异常、
+try/except 退出码、requirements.txt、发布无 pycache/运行数据与 Day1-9 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
