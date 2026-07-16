@@ -214,6 +214,28 @@ python3 course/day11/deploy/build_release.py --output artifacts/day11
 Day 11 门禁覆盖 pathlib 语料发现、UTF-8/with 读取、csv/json 解析、re 关键词统计、
 Schema v3→v4 迁移、CLI 语料导入检索、示例 corpus  fixtures 与 Day1-10 历史回归。
 
+## Day 12 HTTP API 与首次模型调用
+
+- [Day 12 完整课件：HTTP、requests 与 Chat Completions](course/day12/day12-lesson.md)
+- [HTTP API 平台参考实现](course/day12/solution/)
+- [API 与 Mock 服务器单测](course/day12/tests/test_api.py)
+- [API CLI 双进程测试](course/day12/tests/test_cli.py)
+- [API 发布部署测试](course/day12/tests/test_release.py)
+
+```bash
+pip install -r course/day12/solution/requirements.txt
+export NEXUS_API_KEY=your-key   # 或 export NEXUS_USE_MOCK=1 演示
+cd course/day12/solution && PYTHONPATH=. python3 main.py
+python3 course/day12/tests/test_api.py
+python3 course/day12/tests/test_cli.py
+python3 course/day12/tests/test_release.py
+python3 tools/verify_day12.py
+python3 course/day12/deploy/build_release.py --output artifacts/day12
+```
+
+Day 12 门禁覆盖 HTTP/requests、Bearer 鉴权、Chat Completions 解析、Mock API 测试、
+菜单 12 真实 API 对话、菜单 9 模拟回退、Key 不入库与 Day1-11 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
