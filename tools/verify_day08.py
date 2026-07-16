@@ -1,6 +1,7 @@
 """Day 8 面向对象课件、模型、迁移与发布质量门禁。"""
 
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -45,10 +46,16 @@ def fail(message):
 content = LESSON.read_text(encoding="utf-8")
 if len(content) < MINIMUM_CHARACTERS:
     fail(f"课件只有 {len(content)} 字符，要求至少 {MINIMUM_CHARACTERS}")
-# Mermaid 使用 [] 表示节点边界。标签本身含空列表时必须用引号包裹，
-# 否则 GitHub 会把内层 ] 误判为节点结束并产生 Parse error。
-if "messages=[]" in content:
-    fail('Mermaid 标签 messages=[] 未加引号，会与节点方括号冲突')
+# Mermaid 使用 [] 表示节点边界。只扫描 Mermaid 代码块，避免把正文中的
+# Python 示例误判；节点标签以引号开头时允许包含 []。
+mermaid_blocks = re.findall(
+    r"```mermaid\s*\n(.*?)```",
+    content,
+    flags=re.DOTALL,
+)
+for block in mermaid_blocks:
+    if re.search(r"\b\w+\[[^\"\n\]]*=\[\]", block):
+        fail("Mermaid 节点标签包含未加引号的空列表，会与节点方括号冲突")
 missing = [item for item in REQUIRED if item not in content]
 if missing:
     fail(f"缺少内容：{', '.join(missing)}")
