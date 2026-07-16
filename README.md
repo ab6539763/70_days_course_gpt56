@@ -153,6 +153,26 @@ python3 course/day08/deploy/build_release.py --output artifacts/day08
 Day 8 门禁覆盖类与实例、`__init__`、实例/类/静态方法、对象 JSON 往返、
 Contact/ChatMessage 聚合、Schema v1→v2 迁移和部署后消息恢复。
 
+## Day 9 模型继承、多态与 Schema v3
+
+- [Day 9 完整课件：BaseModel、OpenAIModel 与 QwenModel](course/day09/day09-lesson.md)
+- [多供应商模型平台参考实现](course/day09/solution/model_platform.py)
+- [继承与多态单测](course/day09/tests/test_models.py)
+- [模型 CLI 双进程测试](course/day09/tests/test_cli.py)
+- [发布部署测试](course/day09/tests/test_release.py)
+
+```bash
+python3 course/day09/solution/model_platform.py
+python3 course/day09/tests/test_models.py
+python3 course/day09/tests/test_cli.py
+python3 course/day09/tests/test_release.py
+python3 tools/verify_day09.py
+python3 course/day09/deploy/build_release.py --output artifacts/day09
+```
+
+Day 9 门禁覆盖继承、`super()`、多态、`@property`、`__str__`/`__repr__`/`__call__`、
+`create_model` 工厂、Schema v2→v3 迁移、模型切换持久化、模拟对话与 Day1-8 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
