@@ -45,6 +45,10 @@ def fail(message):
 content = LESSON.read_text(encoding="utf-8")
 if len(content) < MINIMUM_CHARACTERS:
     fail(f"课件只有 {len(content)} 字符，要求至少 {MINIMUM_CHARACTERS}")
+# Mermaid 使用 [] 表示节点边界。标签本身含空列表时必须用引号包裹，
+# 否则 GitHub 会把内层 ] 误判为节点结束并产生 Parse error。
+if "messages=[]" in content:
+    fail('Mermaid 标签 messages=[] 未加引号，会与节点方括号冲突')
 missing = [item for item in REQUIRED if item not in content]
 if missing:
     fail(f"缺少内容：{', '.join(missing)}")

@@ -193,7 +193,7 @@ sequenceDiagram
     J->>P: schema1
     P->>C: 每条联系人字典
     C-->>P: Contact对象
-    P->>P: messages=[]
+    P->>P: messages 设为空列表
     P-->>S: state,migrated=True
     S->>S: revision+1/schema2
 ```
@@ -360,9 +360,9 @@ state.to_dict遍历对象调用to_dict；from_dict遍历字典调用类方法。
 flowchart TD
     Load[读取JSON] --> Version{版本}
     Version -->|1| V1[恢复owner/contacts]
-    V1 --> EmptyMessages[messages=[]]
-    EmptyMessages --> Migrated[migrated=True]
-    Migrated --> Revision[revision+1]
+    V1 --> EmptyMessages["messages = []"]
+    EmptyMessages --> Migrated["migrated = true"]
+    Migrated --> Revision["revision + 1"]
     Revision --> SaveV2[保存schema2]
     Version -->|2| V2[正常恢复]
     Version -->|其他| Reject[exit3不覆盖]
