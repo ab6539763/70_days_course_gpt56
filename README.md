@@ -335,6 +335,26 @@ python3 course/day17/deploy/build_release.py --output artifacts/day17
 Day 17 门禁覆盖 take_last 窗口、token 粗估、持久化与发送分离、
 max_history、GET /api/window、OpenAPI WindowMeta、菜单 17 与 Day1-16 历史回归。
 
+## Day 18 SSE 流式、delta 与 Web 实时体验
+
+- [Day 18 完整课件：SSE、text/event-stream、chat/stream](course/day18/day18-lesson.md)
+- [SSE 流式参考实现](course/day18/solution/)
+- [流式与 delta 单测](course/day18/tests/test_stream.py)
+- [Web SSE 集成测试](course/day18/tests/test_web.py)
+- [发布部署测试](course/day18/tests/test_release.py)
+
+```bash
+pip install -r course/day18/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+cd course/day18/solution && PYTHONPATH=. python3 main.py --web
+# 浏览器流式对话；curl -N POST /api/chat/stream
+python3 tools/verify_day18.py
+python3 course/day18/deploy/build_release.py --output artifacts/day18
+```
+
+Day 18 门禁覆盖 SSE 流式、delta、conversation_turn_stream、窗口约束叠加、
+POST /api/chat/stream、OpenAPI StreamDoneEvent、菜单 18 与 Day1-17 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
