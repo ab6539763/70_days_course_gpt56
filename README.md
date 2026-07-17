@@ -355,6 +355,27 @@ python3 course/day18/deploy/build_release.py --output artifacts/day18
 Day 18 门禁覆盖 SSE 流式、delta、conversation_turn_stream、窗口约束叠加、
 POST /api/chat/stream、OpenAPI StreamDoneEvent、菜单 18 与 Day1-17 历史回归。
 
+## Day 19 会话隔离、X-Session-Id 与多用户 state
+
+- [Day 19 完整课件：会话隔离、SessionRegistry、独立 JSON](course/day19/day19-lesson.md)
+- [会话隔离参考实现](course/day19/solution/)
+- [Session 与隔离单测](course/day19/tests/test_session.py)
+- [Web 会话 API 集成测试](course/day19/tests/test_web.py)
+- [发布部署测试](course/day19/tests/test_release.py)
+
+```bash
+pip install -r course/day19/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+export NEXUS_SESSION_DIR=sessions
+cd course/day19/solution && PYTHONPATH=. python3 main.py --web
+# POST /api/session → X-Session-Id 请求头
+python3 tools/verify_day19.py
+python3 course/day19/deploy/build_release.py --output artifacts/day19
+```
+
+Day 19 门禁覆盖一会话一文件、X-Session-Id、SESSION_REQUIRED、
+多用户隔离、GET /api/sessions、OpenAPI SessionHeader、菜单 19 与 Day1-18 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
