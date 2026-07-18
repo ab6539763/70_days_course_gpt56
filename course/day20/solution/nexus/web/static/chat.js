@@ -1,0 +1,360 @@
+const messageList = document.getElementById("messageList");
+const chatForm = document.getElementById("chatForm");
+const promptInput = document.getElementById("promptInput");
+const sendBtn = document.getElementById("sendBtn");
+const resumeBtn = document.getElementById("resumeBtn");
+const clearBtn = document.getElementById("clearBtn");
+const statusEl = document.getElementById("status");
+const feedbackEl = document.getElementById("feedback");
+const SESSION_STORAGE_KEY = "nexus_session_id";
+const RESUME_STORAGE_KEY = "nexus_resume_token";
+let currentSessionId = null;
+let pendingResumeToken = null;
+
+async function ensureSession() {
+  const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (stored) {
+    const probe = await fetch("/api/session", {
+      headers: { "X-Session-Id": stored },
+    });
+    if (probe.ok) {
+      currentSessionId = stored;
+      return stored;
+    }
+  }
+  const response = await fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  const data = await response.json();
+  if (!data.ok) {
+    throw new Error(formatError(data.error) || "创建会话失败");
+  }
+  currentSessionId = data.session_id;
+  localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+  return currentSessionId;
+}
+
+function apiHeaders(extra = {}) {
+  return {
+    ...extra,
+    "X-Session-Id": currentSessionId || "",
+  };
+}
+
+function formatError(error) {
+  if (!error) {
+    return "未知错误";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error.code) {
+    return `[${error.code}] ${error.message}`;
+  }
+  return error.message || String(error);
+}
+
+function setFeedback(text, isError = false) {
+  feedbackEl.textContent = text || "";
+  feedbackEl.classList.toggle("error", Boolean(isError));
+}
+
+function setPendingResume(token) {
+  pendingResumeToken = token || null;
+  if (pendingResumeToken) {
+    localStorage.setItem(RESUME_STORAGE_KEY, pendingResumeToken);
+    resumeBtn.hidden = false;
+  } else {
+    localStorage.removeItem(RESUME_STORAGE_KEY);
+    resumeBtn.hidden = true;
+  }
+}
+
+function renderMessages(messages) {
+  messageList.innerHTML = "";
+  if (!messages || messages.length === 0) {
+    const empty = document.createElement("li");
+    empty.textContent = "暂无消息，请在右侧输入问题。";
+    empty.className = "message-item";
+    messageList.appendChild(empty);
+    return;
+  }
+  messages.forEach((item) => {
+    const li = document.createElement("li");
+    li.className = `message-item ${item.role}`;
+    li.innerHTML = `<div class="role">${item.role}</div><div class="content"></div>`;
+    li.querySelector(".content").textContent = item.content || item.preview || "";
+    messageList.appendChild(li);
+  });
+  messageList.scrollTop = messageList.scrollHeight;
+}
+
+function ensureStreamingAssistantBubble() {
+  let node = document.getElementById("streamingAssistant");
+  if (node) {
+    return node.querySelector(".content");
+  }
+  const li = document.createElement("li");
+  li.id = "streamingAssistant";
+  li.className = "message-item assistant streaming";
+  li.innerHTML = `<div class="role">assistant</div><div class="content"></div>`;
+  messageList.appendChild(li);
+  messageList.scrollTop = messageList.scrollHeight;
+  return li.querySelector(".content");
+}
+
+function removeStreamingAssistantBubble() {
+  const node = document.getElementById("streamingAssistant");
+  if (node) {
+    node.remove();
+  }
+}
+
+function parseSseBlock(block) {
+  const lines = block.split("\n");
+  let eventName = "message";
+  let dataLine = "";
+  lines.forEach((line) => {
+    if (line.startsWith("event:")) {
+      eventName = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataLine = line.slice(5).trim();
+    }
+  });
+  if (!dataLine) {
+    return null;
+  }
+  return { event: eventName, data: JSON.parse(dataLine) };
+}
+
+function consumeSseBuffer(buffer) {
+  const parts = buffer.split("\n\n");
+  const remaining = parts.pop() || "";
+  const events = [];
+  parts.forEach((block) => {
+    if (!block.trim()) {
+      return;
+    }
+    try {
+      const parsed = parseSseBlock(block);
+      if (parsed) {
+        events.push(parsed);
+      }
+    } catch (error) {
+      throw new Error(`SSE 解析失败：${error.message}`);
+    }
+  });
+  return { events, remaining };
+}
+
+async function loadHealth() {
+  const response = await fetch("/api/health");
+  const data = await response.json();
+  if (!data.ok) {
+    statusEl.textContent = `服务异常：${formatError(data.error)}`;
+    return;
+  }
+  const resumeHint = data.pending_resume_count
+    ? `｜pending_resume=${data.pending_resume_count}`
+    : "";
+  statusEl.textContent = `session=${currentSessionId?.slice(0, 12) || ""}…｜sessions=${data.session_count ?? "?"}${resumeHint}｜trace=${data.trace_id || ""}`;
+}
+
+async function loadMessages() {
+  const response = await fetch("/api/messages", { headers: apiHeaders() });
+  const data = await response.json();
+  if (!data.ok) {
+    setFeedback(formatError(data.error) || "加载消息失败", true);
+    return;
+  }
+  renderMessages(data.messages);
+}
+
+async function streamChat({ prompt = null, resumeToken = null } = {}) {
+  sendBtn.disabled = true;
+  resumeBtn.disabled = true;
+  setFeedback(resumeToken ? "正在续传生成…" : "正在流式请求模型…");
+  removeStreamingAssistantBubble();
+  const contentEl = ensureStreamingAssistantBubble();
+  let assistantText = "";
+  let donePayload = null;
+  let interruptedPayload = null;
+
+  const body = resumeToken ? { resume_token: resumeToken } : { prompt };
+  const response = await fetch("/api/chat/stream", {
+    method: "POST",
+    headers: apiHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+
+  const contentType = response.headers.get("Content-Type") || "";
+  if (!response.ok || !contentType.includes("text/event-stream")) {
+    sendBtn.disabled = false;
+    resumeBtn.disabled = false;
+    removeStreamingAssistantBubble();
+    let message = resumeToken ? "续传失败" : "发送失败";
+    try {
+      const data = await response.json();
+      message = formatError(data.error) || message;
+    } catch (error) {
+      message = `HTTP ${response.status}`;
+    }
+    setFeedback(message, true);
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const parsed = consumeSseBuffer(buffer);
+    buffer = parsed.remaining;
+    parsed.events.forEach((item) => {
+      if (item.event === "resume" && item.data.partial) {
+        assistantText = item.data.partial;
+        contentEl.textContent = assistantText;
+      } else if (item.event === "chunk" && item.data.delta) {
+        assistantText += item.data.delta;
+        contentEl.textContent = assistantText;
+        messageList.scrollTop = messageList.scrollHeight;
+      } else if (item.event === "interrupted") {
+        interruptedPayload = item.data;
+        if (item.data.partial) {
+          assistantText = item.data.partial;
+          contentEl.textContent = assistantText;
+        }
+      } else if (item.event === "done") {
+        donePayload = item.data;
+      } else if (item.event === "error") {
+        throw new Error(formatError(item.data.error) || "流式错误");
+      }
+    });
+  }
+
+  sendBtn.disabled = false;
+  resumeBtn.disabled = false;
+  removeStreamingAssistantBubble();
+
+  if (interruptedPayload && interruptedPayload.resume_token) {
+    setPendingResume(interruptedPayload.resume_token);
+    setFeedback(
+      `连接中断，可点击「继续生成」续传（token=${interruptedPayload.resume_token.slice(0, 16)}…）`,
+      true,
+    );
+    await loadMessages();
+    await loadHealth();
+    return;
+  }
+
+  setPendingResume(null);
+
+  if (!donePayload || !donePayload.ok) {
+    setFeedback("流式响应未完成", true);
+    await loadMessages();
+    return;
+  }
+
+  renderMessages(donePayload.messages);
+  const windowHint = donePayload.window && donePayload.window.window_applied
+    ? `｜窗口 ${donePayload.window.non_system_sent}/${donePayload.window.non_system_total} 条`
+    : "";
+  const resumeHint = donePayload.resumed ? "｜已续传" : "";
+  setFeedback(`流式完成 revision=${donePayload.revision}${windowHint}${resumeHint}`);
+  await loadHealth();
+}
+
+async function sendPrompt(prompt) {
+  await streamChat({ prompt });
+}
+
+async function resumeStream() {
+  if (!pendingResumeToken) {
+    setFeedback("没有可续传的 resume_token", true);
+    return;
+  }
+  const token = pendingResumeToken;
+  setPendingResume(null);
+  try {
+    await streamChat({ resumeToken: token });
+  } catch (error) {
+    setPendingResume(token);
+    throw error;
+  }
+}
+
+async function clearHistory() {
+  clearBtn.disabled = true;
+  const response = await fetch("/api/clear", {
+    method: "POST",
+    headers: apiHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ keep_system: true }),
+  });
+  const data = await response.json();
+  clearBtn.disabled = false;
+  if (!data.ok) {
+    setFeedback(formatError(data.error) || "清空失败", true);
+    return;
+  }
+  setPendingResume(null);
+  renderMessages(data.messages);
+  setFeedback(data.message || "已清空");
+  await loadHealth();
+}
+
+chatForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const prompt = promptInput.value.trim();
+  if (!prompt) {
+    setFeedback("请输入问题", true);
+    return;
+  }
+  promptInput.value = "";
+  try {
+    await sendPrompt(prompt);
+  } catch (error) {
+    sendBtn.disabled = false;
+    resumeBtn.disabled = false;
+    removeStreamingAssistantBubble();
+    setFeedback(String(error), true);
+    await loadMessages();
+  }
+});
+
+resumeBtn.addEventListener("click", async () => {
+  try {
+    await resumeStream();
+  } catch (error) {
+    setFeedback(String(error), true);
+    await loadMessages();
+  }
+});
+
+clearBtn.addEventListener("click", clearHistory);
+
+promptInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    chatForm.requestSubmit();
+  }
+});
+
+ensureSession()
+  .then(() => {
+    const storedResume = localStorage.getItem(RESUME_STORAGE_KEY);
+    if (storedResume) {
+      setPendingResume(storedResume);
+    }
+    return loadHealth();
+  })
+  .then(loadMessages)
+  .catch((error) => {
+    setFeedback(String(error), true);
+  });

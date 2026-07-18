@@ -376,6 +376,28 @@ python3 course/day19/deploy/build_release.py --output artifacts/day19
 Day 19 门禁覆盖一会话一文件、X-Session-Id、SESSION_REQUIRED、
 多用户隔离、GET /api/sessions、OpenAPI SessionHeader、菜单 19 与 Day1-18 历史回归。
 
+## Day 20 SSE 断流恢复、resume_token 与续传
+
+- [Day 20 完整课件：断流恢复、interrupted、StreamResumeStore](course/day20/day20-lesson.md)
+- [断流恢复参考实现](course/day20/solution/)
+- [断流恢复单测](course/day20/tests/test_resume.py)
+- [Web 断流 API 集成测试](course/day20/tests/test_web.py)
+- [发布部署测试](course/day20/tests/test_release.py)
+
+```bash
+pip install -r course/day20/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+export NEXUS_SESSION_DIR=sessions
+export NEXUS_STREAM_RESUME_TTL=300
+cd course/day20/solution && PYTHONPATH=. python3 main.py --web
+# X-Stream-Simulate-Interrupt: 1 模拟断流 → resume_token 续传
+python3 tools/verify_day20.py
+python3 course/day20/deploy/build_release.py --output artifacts/day20
+```
+
+Day 20 门禁覆盖 interrupted 事件、resume_token、GET /api/stream/resume、
+INVALID_RESUME、RESUME_EXPIRED、OpenAPI StreamChatRequest、菜单 20 与 Day1-19 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
