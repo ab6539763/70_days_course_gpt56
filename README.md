@@ -419,6 +419,27 @@ python3 course/day21/deploy/build_release.py --output artifacts/day21
 Day 21 门禁覆盖 GET /api/revision、REVISION_CONFLICT、X-Expected-Revision、
 revision_guard、OpenAPI 409、菜单 21 与 Day1-20 历史回归。
 
+## Day 22 审计日志、AuditLogStore 与 revision 变更追溯
+
+- [Day 22 完整课件：审计日志、trace_id、JSONL 落盘](course/day22/day22-lesson.md)
+- [审计日志参考实现](course/day22/solution/)
+- [审计日志单测](course/day22/tests/test_audit.py)
+- [Web audit API 集成测试](course/day22/tests/test_web.py)
+- [发布部署测试](course/day22/tests/test_release.py)
+
+```bash
+pip install -r course/day22/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+export NEXUS_AUDIT_DIR=audit
+cd course/day22/solution && PYTHONPATH=. python3 main.py --web
+# GET /api/audit 查询 revision 变更审计记录
+python3 tools/verify_day22.py
+python3 course/day22/deploy/build_release.py --output artifacts/day22
+```
+
+Day 22 门禁覆盖 GET /api/audit、AuditLogStore、NEXUS_AUDIT_DIR、
+trace_id、OpenAPI 审计 schema、菜单 22 与 Day1-21 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
