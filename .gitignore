@@ -1,0 +1,18 @@
+# Python 解释器生成的字节码缓存不属于课程源代码。
+__pycache__/
+*.py[cod]
+
+# 本地虚拟环境与私密配置不得进入版本库。
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# 可由构建脚本重复生成的本地发布产物。
+artifacts/
+
+# 编辑器和操作系统生成的本地文件。
+.vscode/
+.idea/
+.DS_Store

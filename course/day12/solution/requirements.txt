@@ -1,0 +1,3 @@
+# NexusAI 0.0.12 依赖清单
+requests>=2.31.0
+# Day 13 将追加：python-dotenv>=1.0.0

@@ -1,0 +1,4 @@
+# NexusAI 0.0.11 依赖清单
+# 本日仍仅使用 Python 3.10+ 标准库（pathlib/re/csv/json/os）。
+# Day 12 将追加：requests>=2.31.0
+# Day 13 将追加：python-dotenv>=1.0.0

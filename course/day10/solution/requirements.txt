@@ -1,0 +1,4 @@
+# NexusAI 0.0.10 依赖清单
+# 本日仅使用 Python 3.10+ 标准库，无需额外安装。
+# Day 12 将追加：requests>=2.31.0
+# Day 13 将追加：python-dotenv>=1.0.0
