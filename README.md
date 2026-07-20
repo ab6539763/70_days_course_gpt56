@@ -398,6 +398,27 @@ python3 course/day20/deploy/build_release.py --output artifacts/day20
 Day 20 门禁覆盖 interrupted 事件、resume_token、GET /api/stream/resume、
 INVALID_RESUME、RESUME_EXPIRED、OpenAPI StreamChatRequest、菜单 20 与 Day1-19 历史回归。
 
+## Day 21 乐观锁、expected_revision 与 revision 冲突检测
+
+- [Day 21 完整课件：乐观锁、revision_guard、409 冲突](course/day21/day21-lesson.md)
+- [乐观锁参考实现](course/day21/solution/)
+- [乐观锁单测](course/day21/tests/test_revision.py)
+- [Web revision API 集成测试](course/day21/tests/test_web.py)
+- [发布部署测试](course/day21/tests/test_release.py)
+
+```bash
+pip install -r course/day21/solution/requirements.txt
+export NEXUS_USE_MOCK=1
+export NEXUS_SESSION_DIR=sessions
+cd course/day21/solution && PYTHONPATH=. python3 main.py --web
+# X-Expected-Revision 头 + expected_revision 字段防并发覆盖
+python3 tools/verify_day21.py
+python3 course/day21/deploy/build_release.py --output artifacts/day21
+```
+
+Day 21 门禁覆盖 GET /api/revision、REVISION_CONFLICT、X-Expected-Revision、
+revision_guard、OpenAPI 409、菜单 21 与 Day1-20 历史回归。
+
 ## 内容原则
 
 1. 每天均包含业务上下文、需求文档、架构或流程图、课堂笔记、代码、测试、作业与答案。
